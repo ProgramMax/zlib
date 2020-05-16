@@ -746,5 +746,5 @@ int main(argc, argv)
     free(compr);
     free(uncompr);
 
-    return 0;
+    return 1;
 }
