@@ -3,8 +3,6 @@ version: 1.2.11.1.{build}
 pull_requests:
   do_not_increment_build_number: true
 
-skip_branch_with_pr: true
-
 shallow_clone: true
 
 image:
@@ -23,6 +21,6 @@ configuration:
   - Release
 
 test_script:
-  - "%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/tooling/appveyor/junit-results.xml"
+  - "%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml"
   - ps: $wc = New-Object 'System.Net.WebClient'
-  - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\tooling\appveyor\junit-results.xml))
+  - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path %APPVEYOR_BUILD_FOLDER%\%CONFIGURATION%\junit-results.xml))
