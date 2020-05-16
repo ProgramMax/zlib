@@ -160,7 +160,7 @@ test_result test_compress(compr, comprLen, uncompr, uncomprLen)
     test_result result;
 
     err = compress(compr, &comprLen, (const Bytef*)hello, len);
-	err += 1;
+	//err += 1;
     RETURN_ON_ERROR_WITH_MESSAGE(err, "compress", result);
 
     strcpy((char*)uncompr, "garbage");
