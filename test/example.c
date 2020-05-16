@@ -27,66 +27,66 @@ typedef struct test_result_s {
     int           result; /* One of: SUCCESSFUL,
                           FAILED_WITH_ERROR_CODE, or
                           FAILED_WITHOUT_ERROR_CODE*/
-    int           err;     /* error code if success is FAILED_WITH_ERROR_CODE */
+    int           error_code; /* error code if success is FAILED_WITH_ERROR_CODE */
     z_const char* message;
     z_const char* extended_message;
 } test_result;
 
-// TODO(cblume): some of these can be functions instead of macros
-#define EXIT_ON_ERROR(err, msg) { \
-    if (err != Z_OK) { \
-        fprintf(stderr, "%s error: %d\n", msg, err); \
-        exit(1); \
+void exit_on_error(int error_code, z_const char* message) {
+    if (error_code != Z_OK) {
+        fprintf(stderr, "%s error: %d\n", message, error_code);
+        exit(1);
+    }
+}
+
+#define RETURN_ON_ERROR_WITH_MESSAGE(_error_code, _message, _result) { \
+    if (_error_code != Z_OK) { \
+        _result.error_code = _error_code; \
+        _result.result = FAILED_WITH_ERROR_CODE; \
+        _result.message = _message; \
+        return _result; \
     } \
 }
 
-#define RETURN_ON_ERROR_WITH_MESSAGE(err, msg, result) { \
-    if (err != Z_OK) { \
-        result.err = err; \
-        result.result = FAILED_WITH_ERROR_CODE; \
-        result.message = msg; \
-        return result; \
-    } \
-}
-
-#define RETURN_WITH_MESSAGE(msg, result) { \
-    result.result = FAILED_WITHOUT_ERROR_CODE; \
-    result.message = msg; \
+#define RETURN_WITH_MESSAGE(_message, _result) { \
+    _result.result = FAILED_WITHOUT_ERROR_CODE; \
+    _result.message = _message; \
     return result; \
 }
 
-#define HANDLE_TEST_RESULTS(output, result, testcase_name, is_junit_output) { \
-    if (is_junit_output) { \
-        fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name); \
-    } \
-    if (result.result == FAILED_WITH_ERROR_CODE) { \
-        if (is_junit_output) { \
-            fprintf(output, "\n\t\t\t<failure>%s error: %d</failure>\n\t\t", result.message, result.err); \
-		} else { \
-            fprintf(stderr, "%s error: %d\n", result.message, result.err); \
-            exit(1); \
-		} \
-    } else if (result.result == FAILED_WITHOUT_ERROR_CODE) { \
-        if (is_junit_output) { \
-            fprintf(output, "\n\t\t\t<failure>%s</failure>\n\t\t", result.message); \
-		} else { \
-            fprintf(stderr, "%s", result.message); \
-            exit(1); \
-        } \
-    } else { \
-        if (!is_junit_output) { \
-            if (result.message != NULL) { \
-                if (result.extended_message != NULL) { \
-                    fprintf(output, "%s %s", result.message, result.extended_message); \
-                } else { \
-                    fprintf(output, "%s", result.message); \
-                } \
-            } \
-        } \
-    } \
-    if (is_junit_output) { \
-        fprintf(output, "</testcase>\n"); \
-    } \
+// TODO(cblume): Add file and line
+void handle_test_results(FILE* output, test_result result, z_const char* testcase_name, int is_junit_output) {
+    if (is_junit_output) {
+        fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name);
+    }
+    if (result.result == FAILED_WITH_ERROR_CODE) {
+        if (is_junit_output) {
+            fprintf(output, "\n\t\t\t<failure>%s error: %d</failure>\n\t\t", result.message, result.error_code);
+		} else {
+            fprintf(stderr, "%s error: %d\n", result.message, result.error_code);
+            exit(1);
+		}
+    } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
+        if (is_junit_output) {
+            fprintf(output, "\n\t\t\t<failure>%s</failure>\n\t\t", result.message);
+		} else {
+            fprintf(stderr, "%s", result.message);
+            exit(1);
+        }
+    } else {
+        if (!is_junit_output) {
+            if (result.message != NULL) {
+                if (result.extended_message != NULL) {
+                    fprintf(output, "%s %s", result.message, result.extended_message);
+                } else {
+                    fprintf(output, "%s", result.message);
+                }
+            }
+        }
+    }
+    if (is_junit_output) {
+        fprintf(output, "</testcase>\n");
+    }
 }
 
 static z_const char hello[] = "hello, hello!";
@@ -627,11 +627,11 @@ test_result test_dict_inflate(compr, comprLen, uncompr, uncomprLen)
             err = inflateSetDictionary(&d_stream, (const Bytef*)dictionary,
                                        (int)sizeof(dictionary));
         }
-        EXIT_ON_ERROR(err, "inflate with dict");
+        exit_on_error(err, "inflate with dict");
     }
 
     err = inflateEnd(&d_stream);
-    EXIT_ON_ERROR(err, "inflateEnd");
+    exit_on_error(err, "inflateEnd");
 
     if (strcmp((char*)uncompr, hello)) {
         RETURN_WITH_MESSAGE("bad inflate with dict\n", result);
@@ -684,7 +684,6 @@ int main(argc, argv)
     (void)argc;
     (void)argv;
 #else
-	// TODO(cblume): Allow both sets of flags to coexist.
 	int next_argv_index = 1;
     if (argc > 1) {
         if (strcmp(argv[1], "--junit") == 0) {
@@ -707,33 +706,33 @@ int main(argc, argv)
     }
 
     result = test_compress(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "compress", is_junit_output);
+    handle_test_results(output, result, "compress", is_junit_output);
 	
     result = test_gzio((argc > next_argv_index ? argv[next_argv_index++] : TESTFILE),
                        uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "gzio", is_junit_output);
+    handle_test_results(output, result, "gzio", is_junit_output);
 #endif
 
     result = test_deflate(compr, comprLen);
-    HANDLE_TEST_RESULTS(output, result, "deflate", is_junit_output);
+    handle_test_results(output, result, "deflate", is_junit_output);
     result = test_inflate(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "inflate", is_junit_output);
+    handle_test_results(output, result, "inflate", is_junit_output);
 
     result = test_large_deflate(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "large deflate", is_junit_output);
+    handle_test_results(output, result, "large deflate", is_junit_output);
     result = test_large_inflate(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "large inflate", is_junit_output);
+    handle_test_results(output, result, "large inflate", is_junit_output);
 
     result = test_flush(compr, &comprLen);
-    HANDLE_TEST_RESULTS(output, result, "flush", is_junit_output);
+    handle_test_results(output, result, "flush", is_junit_output);
     result = test_sync(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "sync", is_junit_output);
+    handle_test_results(output, result, "sync", is_junit_output);
     comprLen = uncomprLen;
 
     result = test_dict_deflate(compr, comprLen);
-    HANDLE_TEST_RESULTS(output, result, "dict deflate", is_junit_output);
+    handle_test_results(output, result, "dict deflate", is_junit_output);
     result = test_dict_inflate(compr, comprLen, uncompr, uncomprLen);
-    HANDLE_TEST_RESULTS(output, result, "dict inflate", is_junit_output);
+    handle_test_results(output, result, "dict inflate", is_junit_output);
 
     if (is_junit_output) {
         fprintf(output, "\t</testsuite>\n");
