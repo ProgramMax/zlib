@@ -23,4 +23,4 @@ configuration:
 test_script:
   - "%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml"
   - ps: $wc = New-Object 'System.Net.WebClient'
-  - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", "{APPVEYOR_BUILD_FOLDER}\{CONFIGURATION}\junit-results.xml")
+  - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", "%APPVEYOR_BUILD_FOLDER%\%CONFIGURATION%\junit-results.xml")
