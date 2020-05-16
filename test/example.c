@@ -28,6 +28,7 @@ typedef struct test_result_s {
                           FAILED_WITH_ERROR_CODE, or
                           FAILED_WITHOUT_ERROR_CODE*/
     int           error_code; /* error code if success is FAILED_WITH_ERROR_CODE */
+    int           line_number;
     z_const char* message;
     z_const char* extended_message;
 } test_result;
@@ -41,8 +42,9 @@ void exit_on_error(int error_code, z_const char* message) {
 
 #define RETURN_ON_ERROR_WITH_MESSAGE(_error_code, _message, _result) { \
     if (_error_code != Z_OK) { \
-        _result.error_code = _error_code; \
         _result.result = FAILED_WITH_ERROR_CODE; \
+        _result.error_code = _error_code; \
+        _result.line_number = __LINE__; \
         _result.message = _message; \
         return _result; \
     } \
@@ -50,6 +52,7 @@ void exit_on_error(int error_code, z_const char* message) {
 
 #define RETURN_WITH_MESSAGE(_message, _result) { \
     _result.result = FAILED_WITHOUT_ERROR_CODE; \
+    _result.line_number = __LINE__; \
     _result.message = _message; \
     return result; \
 }
@@ -61,14 +64,14 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
     }
     if (result.result == FAILED_WITH_ERROR_CODE) {
         if (is_junit_output) {
-            fprintf(output, "\n\t\t\t<failure>%s error: %d</failure>\n\t\t", result.message, result.error_code);
+            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s error: %d</failure>\n\t\t", __FILE__, result.line_number, result.message, result.error_code);
 		} else {
             fprintf(stderr, "%s error: %d\n", result.message, result.error_code);
             exit(1);
 		}
     } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
         if (is_junit_output) {
-            fprintf(output, "\n\t\t\t<failure>%s</failure>\n\t\t", result.message);
+            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s</failure>\n\t\t", __FILE__, result.line_number, result.message);
 		} else {
             fprintf(stderr, "%s", result.message);
             exit(1);
