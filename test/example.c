@@ -36,13 +36,6 @@ typedef struct test_result_s {
 #define STRING_BUFFER_SIZE 100
 char string_buffer[STRING_BUFFER_SIZE];
 
-void exit_on_error(int error_code, z_const char* message) {
-    if (error_code != Z_OK) {
-        fprintf(stderr, "%s error: %d\n", message, error_code);
-        exit(1);
-    }
-}
-
 #define RETURN_ON_ERROR_WITH_MESSAGE(_error_code, _message, _result) { \
     if (_error_code != Z_OK) { \
         _result.result = FAILED_WITH_ERROR_CODE; \
@@ -654,11 +647,11 @@ test_result test_dict_inflate(compr, comprLen, uncompr, uncomprLen)
             err = inflateSetDictionary(&d_stream, (const Bytef*)dictionary,
                                        (int)sizeof(dictionary));
         }
-        exit_on_error(err, "inflate with dict");
+        RETURN_ON_ERROR_WITH_MESSAGE(err, "inflate with dict", result);
     }
 
     err = inflateEnd(&d_stream);
-    exit_on_error(err, "inflateEnd");
+    RETURN_ON_ERROR_WITH_MESSAGE(err, "inflateEnd", result);
 
     if (strcmp((char*)uncompr, hello)) {
         RETURN_WITH_MESSAGE("bad inflate with dict\n", result);
