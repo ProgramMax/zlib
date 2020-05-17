@@ -57,12 +57,12 @@ void exit_on_error(int error_code, z_const char* message) {
     return result; \
 }
 
-// TODO(cblume): Add file and line
-void handle_test_results(FILE* output, test_result result, z_const char* testcase_name, int is_junit_output) {
+void handle_test_results(FILE* output, test_result result, z_const char* testcase_name, int is_junit_output, int* failed_test_count) {
     if (is_junit_output) {
         fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name);
     }
     if (result.result == FAILED_WITH_ERROR_CODE) {
+        (*failed_test_count)++;
         if (is_junit_output) {
             fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s error: %d</failure>\n\t\t", __FILE__, result.line_number, result.message, result.error_code);
 		} else {
@@ -70,6 +70,7 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
             exit(1);
 		}
     } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
+        (*failed_test_count)++;
         if (is_junit_output) {
             fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s</failure>\n\t\t", __FILE__, result.line_number, result.message);
 		} else {
@@ -160,7 +161,7 @@ test_result test_compress(compr, comprLen, uncompr, uncomprLen)
     test_result result;
 
     err = compress(compr, &comprLen, (const Bytef*)hello, len);
-	//err += 1;
+	err += 1;
     RETURN_ON_ERROR_WITH_MESSAGE(err, "compress", result);
 
     strcpy((char*)uncompr, "garbage");
@@ -662,6 +663,8 @@ int main(argc, argv)
     test_result result;
 	int is_junit_output = 0;
     FILE* output = stdout;
+	int next_argv_index = 1;
+    int failed_test_count = 0;
 
     if (zlibVersion()[0] != myVersion[0]) {
         fprintf(stderr, "incompatible zlib version\n");
@@ -688,7 +691,6 @@ int main(argc, argv)
     (void)argc;
     (void)argv;
 #else
-	int next_argv_index = 1;
     if (argc > 1) {
         if (strcmp(argv[1], "--junit") == 0) {
             if (argc <= 2) {
@@ -710,33 +712,33 @@ int main(argc, argv)
     }
 
     result = test_compress(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "compress", is_junit_output);
+    handle_test_results(output, result, "compress", is_junit_output, &failed_test_count);
 	
     result = test_gzio((argc > next_argv_index ? argv[next_argv_index++] : TESTFILE),
                        uncompr, uncomprLen);
-    handle_test_results(output, result, "gzio", is_junit_output);
+    handle_test_results(output, result, "gzio", is_junit_output, &failed_test_count);
 #endif
 
     result = test_deflate(compr, comprLen);
-    handle_test_results(output, result, "deflate", is_junit_output);
+    handle_test_results(output, result, "deflate", is_junit_output, &failed_test_count);
     result = test_inflate(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "inflate", is_junit_output);
+    handle_test_results(output, result, "inflate", is_junit_output, &failed_test_count);
 
     result = test_large_deflate(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "large deflate", is_junit_output);
+    handle_test_results(output, result, "large deflate", is_junit_output, &failed_test_count);
     result = test_large_inflate(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "large inflate", is_junit_output);
+    handle_test_results(output, result, "large inflate", is_junit_output, &failed_test_count);
 
     result = test_flush(compr, &comprLen);
-    handle_test_results(output, result, "flush", is_junit_output);
+    handle_test_results(output, result, "flush", is_junit_output, &failed_test_count);
     result = test_sync(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "sync", is_junit_output);
+    handle_test_results(output, result, "sync", is_junit_output, &failed_test_count);
     comprLen = uncomprLen;
 
     result = test_dict_deflate(compr, comprLen);
-    handle_test_results(output, result, "dict deflate", is_junit_output);
+    handle_test_results(output, result, "dict deflate", is_junit_output, &failed_test_count);
     result = test_dict_inflate(compr, comprLen, uncompr, uncomprLen);
-    handle_test_results(output, result, "dict inflate", is_junit_output);
+    handle_test_results(output, result, "dict inflate", is_junit_output, &failed_test_count);
 
     if (is_junit_output) {
         fprintf(output, "\t</testsuite>\n");
@@ -746,6 +748,8 @@ int main(argc, argv)
     free(compr);
     free(uncompr);
 
+    if (failed_test_count) {
+        return 1;
+	}
     return 0;
-    //return 1;
 }
