@@ -166,7 +166,7 @@ test_result test_compress(compr, comprLen, uncompr, uncomprLen)
     strcpy((char*)uncompr, "garbage");
 
     err = uncompress(uncompr, &uncomprLen, compr, comprLen);
-	//err += 1;
+	err += 1;
     RETURN_ON_ERROR_WITH_MESSAGE(err, "uncompress", result);
 
     if (strcmp((char*)uncompr, hello)) {
