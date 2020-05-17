@@ -104,8 +104,7 @@ Copyright notice:
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 
-  Jean-loup Gailly        jloup@gzip.org
-  Mark Adler              madler@alumni.caltech.edu
+  Jean-loup Gailly (jloup@gzip.org) & Mark Adler (madler@alumni.caltech.edu)
 
 If you use the zlib library in a product, we would appreciate *not* receiving
 lengthy legal documents to sign.  The sources are provided for free but without
