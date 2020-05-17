@@ -33,6 +33,9 @@ typedef struct test_result_s {
     z_const char* extended_message;
 } test_result;
 
+#define STRING_BUFFER_SIZE 100
+char string_buffer[STRING_BUFFER_SIZE];
+
 void exit_on_error(int error_code, z_const char* message) {
     if (error_code != Z_OK) {
         fprintf(stderr, "%s error: %d\n", message, error_code);
@@ -81,7 +84,7 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
         if (!is_junit_output) {
             if (result.message != NULL) {
                 if (result.extended_message != NULL) {
-                    fprintf(output, "%s %s", result.message, result.extended_message);
+                    fprintf(output, "%s%s\n", result.message, result.extended_message);
                 } else {
                     fprintf(output, "%s", result.message);
                 }
@@ -166,14 +169,13 @@ test_result test_compress(compr, comprLen, uncompr, uncomprLen)
     strcpy((char*)uncompr, "garbage");
 
     err = uncompress(uncompr, &uncomprLen, compr, comprLen);
-	//err += 1;
     RETURN_ON_ERROR_WITH_MESSAGE(err, "uncompress", result);
 
     if (strcmp((char*)uncompr, hello)) {
         RETURN_WITH_MESSAGE("bad uncompress\n", result);
     } else {
         result.result = SUCCESSFUL;
-        result.message = "uncompress(): %s\n";
+        result.message = "uncompress(): ";
         result.extended_message = (char*)uncompr;
         return result;
     }
@@ -355,7 +357,7 @@ test_result test_inflate(compr, comprLen, uncompr, uncomprLen)
         RETURN_WITH_MESSAGE("bad inflate\n", result);
     } else {
         result.result = SUCCESSFUL;
-        result.message = "inflate(): %s\n";
+        result.message = "inflate(): ";
         result.extended_message = (char*)uncompr;
         return result;
     }
@@ -454,9 +456,11 @@ test_result test_large_inflate(compr, comprLen, uncompr, uncomprLen)
     RETURN_ON_ERROR_WITH_MESSAGE(err, "inflateEnd", result);
 
     if (d_stream.total_out != 2*uncomprLen + comprLen/2) {
-        // TODO(cblume): Handle this case
-        fprintf(stderr, "bad large inflate: %ld\n", d_stream.total_out);
-        exit(1);
+        sprintf(string_buffer, "bad large inflate: %ld\n", d_stream.total_out);
+        result.error_code = Z_DATA_ERROR;
+		result.line_number = __LINE__;
+        result.message = string_buffer;
+		return result;
     } else {
         result.result = SUCCESSFUL;
         result.message = "large_inflate(): OK\n";
@@ -549,7 +553,7 @@ test_result test_sync(compr, comprLen, uncompr, uncomprLen)
     RETURN_ON_ERROR_WITH_MESSAGE(err, "inflateEnd", result);
 
     result.result = SUCCESSFUL;
-    result.message = "after inflateSync(): hel%s\n";
+    result.message = "after inflateSync(): hel";
     result.extended_message = (char*)uncompr;
     return result;
 }
@@ -642,7 +646,7 @@ test_result test_dict_inflate(compr, comprLen, uncompr, uncomprLen)
         RETURN_WITH_MESSAGE("bad inflate with dict\n", result);
     } else {
         result.result = SUCCESSFUL;
-        result.message = "inflate with dictionary: %s\n";
+        result.message = "inflate with dictionary: ";
         result.extended_message = (char*)uncompr;
         return result;
     }
