@@ -69,10 +69,10 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
         (*failed_test_count)++;
         if (is_junit_output) {
             fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s error: %d</failure>\n\t\t", __FILE__, result.line_number, result.message, result.error_code);
-		} else {
+        } else {
             fprintf(stderr, "%s error: %d\n", result.message, result.error_code);
             exit(1);
-		}
+        }
     } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
         (*failed_test_count)++;
         if (is_junit_output) {
@@ -81,7 +81,7 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
                 fprintf(output, "%s", result.extended_message);
             }
             fprintf(output, "</failure>\n\t\t");
-		} else {
+        } else {
             fprintf(stderr, "%s", result.message);
             if (result.extended_message != NULL) {
                 fprintf(output, "%s", result.extended_message);
@@ -666,15 +666,14 @@ int main(argc, argv)
     uLong uncomprLen = comprLen;
     static const char* myVersion = ZLIB_VERSION;
     test_result result;
-	int is_junit_output = 0;
+    int is_junit_output = 0;
     FILE* output = stdout;
-	int next_argv_index = 1;
+    int next_argv_index = 1;
     int failed_test_count = 0;
 
     if (zlibVersion()[0] != myVersion[0]) {
         fprintf(stderr, "incompatible zlib version\n");
         exit(1);
-
     } else if (strcmp(zlibVersion(), ZLIB_VERSION) != 0) {
         fprintf(stderr, "warning: different zlib version\n");
     }
@@ -700,7 +699,7 @@ int main(argc, argv)
         if (strcmp(argv[1], "--junit") == 0) {
             if (argc <= 2) {
                 fprintf(stderr, "--junit flag requires an output file parameter, like --junit output.xml");
-				exit(1);
+                exit(1);
             }
             next_argv_index += 2;
             is_junit_output = 1;
@@ -755,6 +754,6 @@ int main(argc, argv)
 
     if (failed_test_count) {
         return 1;
-	}
+    }
     return 0;
 }
