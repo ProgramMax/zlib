@@ -21,8 +21,6 @@ configuration:
   - Release
 
 test_script:
-#  - ps: $testError = ("%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml")
-#  - "%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml"
   - ps: |
       &"$($env:APPVEYOR_BUILD_FOLDER)\$($env:CONFIGURATION)\example.exe" --junit "$($env:APPVEYOR_BUILD_FOLDER)\$($env:CONFIGURATION)\junit-results.xml"
       $testError = $LastExitCode
