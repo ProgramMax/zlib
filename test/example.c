@@ -65,6 +65,7 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
     if (is_junit_output) {
         fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name);
     }
+
     if (result.result == FAILED_WITH_ERROR_CODE) {
         (*failed_test_count)++;
         if (is_junit_output) {
@@ -84,7 +85,7 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
         } else {
             fprintf(stderr, "%s", result.message);
             if (result.extended_message != NULL) {
-                fprintf(output, "%s", result.extended_message);
+                fprintf(stderr, "%s", result.extended_message);
             }
             fprintf(stderr, "\n");
             exit(1);
@@ -95,11 +96,12 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
                 if (result.extended_message != NULL) {
                     fprintf(output, "%s%s\n", result.message, result.extended_message);
                 } else {
-                    fprintf(output, "%s", result.message);
+                    fprintf(stderr, "%s", result.message);
                 }
             }
         }
     }
+
     if (is_junit_output) {
         fprintf(output, "</testcase>\n");
     }
