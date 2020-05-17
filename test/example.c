@@ -46,16 +46,6 @@ char string_buffer[STRING_BUFFER_SIZE];
     } \
 }
 
-#define RETURN_ON_ERROR_WITH_MESSAGE(_error_code, _message, _result) { \
-    if (_error_code != Z_OK) { \
-        _result.result = FAILED_WITH_ERROR_CODE; \
-        _result.error_code = _error_code; \
-        _result.line_number = __LINE__; \
-        _result.message = _message; \
-        return _result; \
-    } \
-}
-
 #define RETURN_WITH_MESSAGE(_message, _result) { \
     _result.result = FAILED_WITHOUT_ERROR_CODE; \
     _result.line_number = __LINE__; \
