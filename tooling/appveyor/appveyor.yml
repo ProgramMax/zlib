@@ -21,8 +21,8 @@ configuration:
   - Release
 
 test_script:
-#  - ps: $testError = ("$($env:APPVEYOR_BUILD_FOLDER)/$($env:CONFIGURATION)/example.exe --junit $($env:APPVEYOR_BUILD_FOLDER)/$($env:CONFIGURATION)/junit-results.xml")
-  - "$($env:APPVEYOR_BUILD_FOLDER)/$($env:CONFIGURATION)/example.exe --junit $($env:APPVEYOR_BUILD_FOLDER)/$($env:CONFIGURATION)/junit-results.xml"
+#  - ps: $testError = ("$($env:APPVEYOR_BUILD_FOLDER)/$($env:CONFIGURATION)/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml")
+  - "%APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/example.exe --junit %APPVEYOR_BUILD_FOLDER%/%CONFIGURATION%/junit-results.xml"
   - ps: $wc = New-Object 'System.Net.WebClient'
   - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path "$($env:APPVEYOR_BUILD_FOLDER)\$($env:CONFIGURATION)\junit-results.xml"))
   - ps: if($testError) { throw $testError }
