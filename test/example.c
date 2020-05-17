@@ -53,10 +53,28 @@ void exit_on_error(int error_code, z_const char* message) {
     } \
 }
 
+#define RETURN_ON_ERROR_WITH_MESSAGE(_error_code, _message, _result) { \
+    if (_error_code != Z_OK) { \
+        _result.result = FAILED_WITH_ERROR_CODE; \
+        _result.error_code = _error_code; \
+        _result.line_number = __LINE__; \
+        _result.message = _message; \
+        return _result; \
+    } \
+}
+
 #define RETURN_WITH_MESSAGE(_message, _result) { \
     _result.result = FAILED_WITHOUT_ERROR_CODE; \
     _result.line_number = __LINE__; \
     _result.message = _message; \
+    return result; \
+}
+
+#define RETURN_WITH_EXTENDED_MESSAGE(_message, _extended_message, _result) { \
+    _result.result = FAILED_WITHOUT_ERROR_CODE; \
+    _result.line_number = __LINE__; \
+    _result.message = _message; \
+    _result.extended_message = _extended_message; \
     return result; \
 }
 
@@ -75,9 +93,17 @@ void handle_test_results(FILE* output, test_result result, z_const char* testcas
     } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
         (*failed_test_count)++;
         if (is_junit_output) {
-            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s</failure>\n\t\t", __FILE__, result.line_number, result.message);
+            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s", __FILE__, result.line_number, result.message);
+            if (result.extended_message != NULL) {
+                fprintf(output, "%s", result.extended_message);
+            }
+            fprintf(output, "</failure>\n\t\t");
 		} else {
             fprintf(stderr, "%s", result.message);
+            if (result.extended_message != NULL) {
+                fprintf(output, "%s", result.extended_message);
+            }
+            fprintf(stderr, "\n");
             exit(1);
         }
     } else {
@@ -192,7 +218,7 @@ test_result test_gzio(fname, uncompr, uncomprLen)
 #ifdef NO_GZCOMPRESS
     test_result result;
     result.success = FAILED_WITHOUT_ERROR_CODE;
-    result.message = "NO_GZCOMPRESS -- gz* functions cannot compress\n";
+    result.message = "NO_GZCOMPRESS -- gz* functions cannot compress";
     return result;
 #else
     int err;
@@ -203,65 +229,57 @@ test_result test_gzio(fname, uncompr, uncomprLen)
 
     file = gzopen(fname, "wb");
     if (file == NULL) {
-        // TODO(cblume): update all these
-        fprintf(stderr, "gzopen error\n");
-        exit(1);
+        RETURN_WITH_MESSAGE("gzopen error", result);
     }
     gzputc(file, 'h');
     if (gzputs(file, "ello") != 4) {
-        fprintf(stderr, "gzputs err: %s\n", gzerror(file, &err));
-        exit(1);
+        RETURN_WITH_EXTENDED_MESSAGE("gzputs err: ", gzerror(file, &err), result);
     }
     if (gzprintf(file, ", %s!", "hello") != 8) {
-        fprintf(stderr, "gzprintf err: %s\n", gzerror(file, &err));
-        exit(1);
+        RETURN_WITH_EXTENDED_MESSAGE("gzprintf err: ", gzerror(file, &err), result);
     }
     gzseek(file, 1L, SEEK_CUR); /* add one zero byte */
     gzclose(file);
 
     file = gzopen(fname, "rb");
     if (file == NULL) {
-        fprintf(stderr, "gzopen error\n");
-        exit(1);
+        RETURN_WITH_MESSAGE("gzopen error", result);
     }
     strcpy((char*)uncompr, "garbage");
 
     if (gzread(file, uncompr, (unsigned)uncomprLen) != len) {
-        fprintf(stderr, "gzread err: %s\n", gzerror(file, &err));
-        exit(1);
+        RETURN_WITH_EXTENDED_MESSAGE("gzread err: ", gzerror(file, &err), result);
     }
     if (strcmp((char*)uncompr, hello)) {
-        fprintf(stderr, "bad gzread: %s\n", (char*)uncompr);
-        exit(1);
+        RETURN_WITH_EXTENDED_MESSAGE("bad gzread: ", (char*)uncompr, result);
     } else {
         printf("gzread(): %s\n", (char*)uncompr);
     }
 
     pos = gzseek(file, -8L, SEEK_CUR);
     if (pos != 6 || gztell(file) != pos) {
-        fprintf(stderr, "gzseek error, pos=%ld, gztell=%ld\n",
+        sprintf(string_buffer, "gzseek error, pos=%ld, gztell=%ld\n",
                 (long)pos, (long)gztell(file));
-        exit(1);
+        result.result = FAILED_WITHOUT_ERROR_CODE;
+        result.line_number = __LINE__;
+        result.message = string_buffer;
+        return result;
     }
 
     if (gzgetc(file) != ' ') {
-        fprintf(stderr, "gzgetc error\n");
-        exit(1);
+        RETURN_WITH_MESSAGE("gzgetc error", result);
     }
 
     if (gzungetc(' ', file) != ' ') {
-        fprintf(stderr, "gzungetc error\n");
-        exit(1);
+        RETURN_WITH_MESSAGE("gzungetc error", result);
     }
 
     gzgets(file, (char*)uncompr, (int)uncomprLen);
     if (strlen((char*)uncompr) != 7) { /* " hello!" */
-        fprintf(stderr, "gzgets err after gzseek: %s\n", gzerror(file, &err));
-        exit(1);
+        RETURN_WITH_EXTENDED_MESSAGE("gzgets err after gzseek: ", gzerror(file, &err), result);
     }
     if (strcmp((char*)uncompr, hello + 6)) {
-        fprintf(stderr, "bad gzgets after gzseek\n");
-        exit(1);
+        RETURN_WITH_MESSAGE("bad gzgets after gzseek", result);
     } else {
         printf("gzgets() after gzseek: %s\n", (char*)uncompr);
     }
@@ -457,10 +475,10 @@ test_result test_large_inflate(compr, comprLen, uncompr, uncomprLen)
 
     if (d_stream.total_out != 2*uncomprLen + comprLen/2) {
         sprintf(string_buffer, "bad large inflate: %ld\n", d_stream.total_out);
-        result.error_code = Z_DATA_ERROR;
-		result.line_number = __LINE__;
+        result.result = FAILED_WITHOUT_ERROR_CODE;
+        result.line_number = __LINE__;
         result.message = string_buffer;
-		return result;
+        return result;
     } else {
         result.result = SUCCESSFUL;
         result.message = "large_inflate(): OK\n";
