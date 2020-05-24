@@ -663,7 +663,8 @@ int main(argc, argv)
     static const char* myVersion = ZLIB_VERSION;
     test_result result;
     int is_junit_output = 0;
-    FILE* output = stdout;
+    const char* output_file_path = NULL;
+	FILE* output = stdout;
     int next_argv_index = 1;
     int failed_test_count = 0;
 
@@ -691,6 +692,7 @@ int main(argc, argv)
     (void)argc;
     (void)argv;
 #else
+    output_file_path = getenv("ZLIB_JUNIT_OUTPUT_FILE");
     if (argc > 1) {
         if (strcmp(argv[1], "--junit") == 0) {
             if (argc <= 2) {
@@ -700,15 +702,18 @@ int main(argc, argv)
             next_argv_index += 2;
             is_junit_output = 1;
 
-            output = fopen(argv[2], "w+");
-            if (!output) {
-                fprintf(stderr, "Could not open junit file");
-                exit(1);
-            }
-            fprintf(output, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
-            fprintf(output, "<testsuites>\n");
-            fprintf(output, "\t<testsuite name=\"zlib example suite\">\n");
+            output_file_path = argv[2];
         }
+    }
+    if (output_file_path) {
+        output = fopen(argv[2], "w+");
+        if (!output) {
+            fprintf(stderr, "Could not open junit file");
+            exit(1);
+        }
+        fprintf(output, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
+        fprintf(output, "<testsuites>\n");
+        fprintf(output, "\t<testsuite name=\"zlib example suite\">\n");
     }
 
     result = test_compress(compr, comprLen, uncompr, uncomprLen);
