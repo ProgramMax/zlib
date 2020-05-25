@@ -67,58 +67,72 @@ char string_buffer[STRING_BUFFER_SIZE];
     return result; \
 }
 
-void handle_test_results OF((FILE* output, test_result result, z_const char* testcase_name, int is_junit_output, int* failed_test_count));
+void handle_stdout_test_results OF((test_result result, const char* testcase_name));
+void handle_junit_test_results OF((FILE* output, test_result result, const char* testcase_name));
+void handle_test_results OF((FILE* output, test_result result, const char* testcase_name, int is_junit_output, int* failed_test_count));
+
+void handle_stdout_test_results(result, testcase_name)
+    test_result result;
+    const char* testcase_name;
+{
+    if (result.result == FAILED_WITH_ERROR_CODE) {
+        fprintf(stderr, "%s error: %d\n", result.message, result.error_code);
+        exit(1);
+    } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
+		fprintf(stderr, "%s", result.message);
+        if (result.extended_message != NULL) {
+            fprintf(stderr, "%s", result.extended_message);
+        }
+        fprintf(stderr, "\n");
+        exit(1);
+    } else {
+        if (result.message != NULL) {
+            if (result.extended_message != NULL) {
+                fprintf(stderr, "%s%s\n", result.message, result.extended_message);
+            } else {
+                fprintf(stderr, "%s", result.message);
+            }
+        }
+    }
+}
+
+void handle_junit_test_results(output, result, testcase_name)
+    FILE* output;
+    test_result result;
+    const char* testcase_name;
+{
+    fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name);
+
+    if (result.result == FAILED_WITH_ERROR_CODE) {
+        fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s error: %d</failure>\n\t\t", __FILE__, result.line_number, result.message, result.error_code);
+    } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
+        fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s", __FILE__, result.line_number, result.message);
+        if (result.extended_message != NULL) {
+            fprintf(output, "%s", result.extended_message);
+        }
+        fprintf(output, "</failure>\n\t\t");
+    }
+
+    fprintf(output, "</testcase>\n");
+}
 
 void handle_test_results(output, result, testcase_name, is_junit_output, failed_test_count)
     FILE* output;
     test_result result;
-    z_const char* testcase_name;
+    const char* testcase_name;
     int is_junit_output;
     int* failed_test_count;
 {
-    if (is_junit_output) {
-        fprintf(output, "\t\t<testcase name=\"%s\">", testcase_name);
-    }
 
-    if (result.result == FAILED_WITH_ERROR_CODE) {
+    if (result.result == FAILED_WITH_ERROR_CODE || result.result == FAILED_WITHOUT_ERROR_CODE) {
         (*failed_test_count)++;
-        if (is_junit_output) {
-            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s error: %d</failure>\n\t\t", __FILE__, result.line_number, result.message, result.error_code);
-        } else {
-            fprintf(stderr, "%s error: %d\n", result.message, result.error_code);
-            exit(1);
-        }
-    } else if (result.result == FAILED_WITHOUT_ERROR_CODE) {
-        (*failed_test_count)++;
-        if (is_junit_output) {
-            fprintf(output, "\n\t\t\t<failure file=\"%s\" line=\"%d\">%s", __FILE__, result.line_number, result.message);
-            if (result.extended_message != NULL) {
-                fprintf(output, "%s", result.extended_message);
-            }
-            fprintf(output, "</failure>\n\t\t");
-        } else {
-            fprintf(stderr, "%s", result.message);
-            if (result.extended_message != NULL) {
-                fprintf(stderr, "%s", result.extended_message);
-            }
-            fprintf(stderr, "\n");
-            exit(1);
-        }
-    } else {
-        if (!is_junit_output) {
-            if (result.message != NULL) {
-                if (result.extended_message != NULL) {
-                    fprintf(stderr, "%s%s\n", result.message, result.extended_message);
-                } else {
-                    fprintf(stderr, "%s", result.message);
-                }
-            }
-        }
-    }
+	}
 
     if (is_junit_output) {
-        fprintf(output, "</testcase>\n");
-    }
+        handle_junit_test_results(output, result, testcase_name);
+	} else {
+        handle_stdout_test_results(result, testcase_name);
+	}
 }
 
 static z_const char hello[] = "hello, hello!";
