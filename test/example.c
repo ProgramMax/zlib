@@ -706,6 +706,7 @@ int main(argc, argv)
         }
     }
     if (output_file_path) {
+        fprintf(stderr, "output path is %s", output_file_path);
         output = fopen(argv[2], "w+");
         if (!output) {
             fprintf(stderr, "Could not open junit file");
