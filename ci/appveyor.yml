@@ -24,7 +24,7 @@ configuration:
 test_script:
   - ps: |
       $env:ZLIB_JUNIT_OUTPUT_FILE = "$($env:APPVEYOR_BUILD_FOLDER)\$($env:CONFIGURATION)\junit-results.xml"
-      &"$($env:APPVEYOR_BUILD_FOLDER)\ctest"
+      &"ctest"
       $testError = $LastExitCode
       $wc = New-Object 'System.Net.WebClient'
       $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path "$($env:ZLIB_JUNIT_OUTPUT_FILE)"))
