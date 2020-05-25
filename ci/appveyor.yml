@@ -26,7 +26,7 @@ test_script:
       &"$($env:APPVEYOR_BUILD_FOLDER)\$($env:CONFIGURATION)\example.exe"
       $testError = $LastExitCode
       $wc = New-Object 'System.Net.WebClient'
-      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path "$($env:ZLIB_JUNIT_OUTPUT_FILE"))
+      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path "$($env:ZLIB_JUNIT_OUTPUT_FILE)"))
       if ($testError -ne 0)
       {
         throw $testError
