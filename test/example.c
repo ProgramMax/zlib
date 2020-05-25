@@ -700,13 +700,13 @@ int main(argc, argv)
                 exit(1);
             }
             next_argv_index += 2;
-            is_junit_output = 1;
 
             output_file_path = argv[2];
         }
     }
     if (output_file_path) {
-        fprintf(stderr, "output path is %s", output_file_path);
+        fprintf(stdout, "output path is %s", output_file_path);
+        is_junit_output = 1;
         output = fopen(argv[2], "w+");
         if (!output) {
             fprintf(stderr, "Could not open junit file");
