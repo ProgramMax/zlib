@@ -664,7 +664,7 @@ int main(argc, argv)
     test_result result;
     int is_junit_output = 0;
     const char* output_file_path = NULL;
-	FILE* output = stdout;
+    FILE* output = stdout;
     int next_argv_index = 1;
     int failed_test_count = 0;
 
