@@ -707,7 +707,7 @@ int main(argc, argv)
     if (output_file_path) {
         fprintf(stdout, "output path is %s", output_file_path);
         is_junit_output = 1;
-        output = fopen(argv[2], "w+");
+        output = fopen(output_file_path, "w+");
         if (!output) {
             fprintf(stderr, "Could not open junit file");
             exit(1);
